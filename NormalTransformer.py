@@ -1,4 +1,4 @@
-from Workfile.Model import LgModel
+from TrainingLanguageModel.Model import LgModel
 
 
 
