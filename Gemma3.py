@@ -27,7 +27,7 @@ def preparedata(dataset, base_prompt, tokenizer,text_col,label_col):
     dataset = dataset.map(lambda ex: formatting_prompts_func(ex, tokenizer), batched=True)
     return dataset
 
-from Workfile.Model import LgModel
+from TrainingLanguageModel.Model import LgModel
 import torch
 class UnslothGemma(LgModel):
   def __init__(self,model_name,max_seq_length,Model = None,tokenizer = None,target_modules = None,r = 8):

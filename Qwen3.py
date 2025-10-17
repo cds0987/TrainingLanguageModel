@@ -16,7 +16,7 @@ def preparedata(dataset,tokenizer,base_prompt,text_col,label_col,alpaca_prompt):
      return dataset.map(formatting_prompts_func, batched = True,)
 
 
-from Workfile.Model import LgModel
+from TrainingLanguageModel.Model import LgModel
 class UnslothQwen(LgModel):
   def __init__(self,model_name,max_seq_length,Model = None,tokenizer = None,target_modules = None,r = 8):
     super().__init__(model_name,max_seq_length,Model,tokenizer)
