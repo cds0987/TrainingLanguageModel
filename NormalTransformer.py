@@ -32,7 +32,7 @@ class SequenceClassification(LgModel):
         warmup_steps=5,
         num_train_epochs=1,
         learning_rate=5e-5,
-        logging_steps=1,
+        logging_steps=200,
         weight_decay=0.01,
         lr_scheduler_type="linear",
         seed=3407,
