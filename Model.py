@@ -42,20 +42,29 @@ class LgModel:
             total_params = sum(p.numel() for p in self.model.parameters())
             trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         return trainable_params, total_params
-    def train_test(self,saveargs = None):
-        torch.cuda.empty_cache()
-        mem_before = torch.cuda.memory_allocated() / 1e6
+    def train_test(self, saveargs=None):
+    # Clear cache on all GPUs
+       for i in range(torch.cuda.device_count()):
+        torch.cuda.empty_cache(i)
+    # Record memory before training (sum across all GPUs)
+        mem_before = sum(torch.cuda.memory_allocated(i) for i in range(torch.cuda.device_count())) / 1e6
         start_time = time.time()
         output = {}
         self.trainer.train()
         end_time = time.time()
-        mem_peak = torch.cuda.max_memory_allocated() / 1e6
-        torch.cuda.empty_cache()
-        mem_after = torch.cuda.memory_allocated() / 1e6
+    # Peak memory across all GPUs
+        mem_peak = sum(torch.cuda.max_memory_allocated(i) for i in range(torch.cuda.device_count())) / 1e6
+    # Clear cache again
+        for i in range(torch.cuda.device_count()):
+         torch.cuda.empty_cache(i)
+        mem_after = sum(torch.cuda.memory_allocated(i) for i in range(torch.cuda.device_count())) / 1e6
+    # Compute metrics
         self.mem_used_train = round(mem_peak - mem_before, 2)
         mem_inference_est = round(mem_after - mem_before, 2)
         self.training_time = round(end_time - start_time, 2)
-        preds,labels = self.test(self.max_seq_length)
+    # Run evaluation
+        preds, labels = self.test(self.max_seq_length)
+    # Collect results
         output['Model_name'] = self.model_name
         output['Train_size'] = len(self.train_ds)
         output['Test_size'] = len(self.test_ds)
@@ -69,10 +78,12 @@ class LgModel:
         output['r'] = self.r
         output['Memory Allocation'] = f"{self.mem_used_train}"
         output['Training Time'] = f"{self.training_time}"
+    # Optionally save model
         if saveargs is not None:
           self.save_modelHgface(saveargs)
         self.clear_memory()
         return output
+
 
 
 
