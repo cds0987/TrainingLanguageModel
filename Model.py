@@ -1,6 +1,7 @@
 import time
 import torch
 import pandas as pd
+import gc
 class LgModel:
     def __init__(self, model_name, max_seq_length,model = None,tokenizer = None):
         self.model_name = model_name
@@ -33,6 +34,7 @@ class LgModel:
     def clear_memory(self, *args, **kwargs):
         del self.model
         del self.tokenizer
+        gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
     def count_paramaters(self):
