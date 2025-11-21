@@ -63,7 +63,7 @@ class LgModel:
         output['Test_size'] = len(self.test_ds)
         output['preds'] = preds
         output['labels'] = labels
-        output['arg'] = self.common_args
+        output['arg'] = self.common_args.to_dict()
         output['lora'] = self.lora
         trainable_parameters, total_parameters = self.count_paramaters()
         output['Parameters'] = total_parameters
