@@ -63,7 +63,7 @@ class LgModel:
         output['Test_size'] = len(self.test_ds)
         output['preds'] = preds
         output['labels'] = labels
-        output['arg'] = self.train_args
+        output['arg'] = self.common_args
         output['lora'] = self.lora
         trainable_parameters, total_parameters = self.count_paramaters()
         output['Parameters'] = total_parameters
@@ -78,5 +78,26 @@ class LgModel:
 
 
 
-
+import torch
+def get_lora_modules(model):
+    target_modules = set()
+    ffd_modules = set()
+    attention_modules = set()
+    try:
+      import bitsandbytes as bnb
+      linear_classes = (torch.nn.Linear, bnb.nn.Linear4bit, bnb.nn.Linear8bitLt)
+    except ImportError:
+      linear_classes = (torch.nn.Linear,)
+    for name, module in model.named_modules():
+      if isinstance(module, linear_classes):
+        sub_name = name.split(".")[-1]
+        lname = name.lower()
+            # Add all linear layers to target_modules
+        target_modules.add(sub_name)
+            # Feed-forward layers are all except q, k, v
+        if not any(ch in lname for ch in [ "q", "k", "v"]):
+          ffd_modules.add(sub_name)
+        else:
+          attention_modules.add(sub_name)
+    return sorted(ffd_modules), sorted(attention_modules),target_modules
 

@@ -45,7 +45,6 @@ class SequenceClassification(LgModel):
     if self.adam8bit:
         common_args["optim"] = "adamw_8bit"
     self.common_args =  TrainingArguments(**common_args)
-    self.train_args = common_args
     self.trainer = Trainer(
         args = self.common_args,
         model = self.model,
