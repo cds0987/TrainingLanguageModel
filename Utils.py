@@ -117,3 +117,37 @@ class Evaluate_model:
         "precision": precision,
         "recall": recall
     }
+    
+import pandas as pd
+def performance_proccess(df):
+  if "Performance" not in df.columns:
+      return df
+  perf = pd.json_normalize(df['Performance'])
+  perf.columns = [f'{col}' for col in perf.columns]
+  df = pd.concat([df, perf], axis=1)
+  perf_cols = ['accuracy', 'f1_macro', 'f1_weighted', 'precision', 'recall']
+  df[perf_cols] = df[perf_cols] * 100
+  df = df.drop(columns=['Performance','arg','Parameters'])
+  return df
+
+def get_top3_lora(ds):
+    df = ds.copy()
+    # 1. normalize lora to tuples (so duplicates are hashable)
+    df["lora"] = df["lora"].apply(
+        lambda x: tuple(x) if isinstance(x, (list, np.ndarray)) else x
+    )
+    # 2. for each (Model_name, lora) keep row with best accuracy
+    best_unique = df.loc[
+        df.groupby(["Model_name", "lora"])["accuracy"].idxmax()
+    ]
+    # 3. for each model keep top-3 accuracy
+    top3 = (
+        best_unique.sort_values(["Model_name", "accuracy"], ascending=[True, False])
+                  .groupby("Model_name")
+                  .head(3)
+                  .reset_index(drop=True)
+    )
+    return top3
+def agreegate(df):
+  best_per_model = df.loc[df.groupby("Model_name")["accuracy"].idxmax()].reset_index(drop=True)
+  return best_per_model
