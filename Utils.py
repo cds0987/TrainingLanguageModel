@@ -1,7 +1,52 @@
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from peft import LoraConfig,RandLoraConfig, get_peft_model
+
+def loadRawSequenceClassificationModel(model_name,num_labels):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    Model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        num_labels=num_labels,
+        ignore_mismatched_sizes=True
+    )
+    if tokenizer.pad_token is None:
+        if tokenizer.eos_token is not None:
+            tokenizer.pad_token = tokenizer.eos_token
+    else:
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+        Model.resize_token_embeddings(len(tokenizer))
+        Model.config.pad_token_id = tokenizer.pad_token_id
+    return Model, tokenizer
+
+
+def loadLoraModel(model, target_modules, r):
+    config = LoraConfig(r=r,lora_alpha=r,target_modules = target_modules,lora_dropout = 0.05,bias = "none",task_type = "SEQ_CLS")
+    model = get_peft_model(model, config)
+    model.print_trainable_parameters()
+    return model
+
+def loadRandLoraModel(model, target_modules, r):
+    config = RandLoraConfig(r = r,lora_alpha = r,target_modules = target_modules)
+    model = get_peft_model(model, config)
+    model.print_trainable_parameters()
+    return model
+
+
+
+
+
 import pandas as pd
 from huggingface_hub import login
 from datasets import Dataset, load_dataset
-
+def performance_proccess(df):
+  if "Performance" not in df.columns:
+      return df
+  perf = pd.json_normalize(df['Performance'])
+  perf.columns = [f'{col}' for col in perf.columns]
+  df = pd.concat([df, perf], axis=1)
+  perf_cols = ['accuracy', 'f1_macro', 'f1_weighted', 'precision', 'recall']
+  df[perf_cols] = df[perf_cols] * 100
+  df = df.drop(columns=['Performance','arg','Parameters'])
+  return df
 class Database:
     def __init__(self, token, username, dataname, columns=None):
 
@@ -34,6 +79,7 @@ class Database:
         try:
             dataset = load_dataset(f"{self.username}/{self.data_name}", split="train")
             df = pd.DataFrame(dataset)
+            df = performance_proccess(df)
             self.columns = list(df.columns)
         except Exception as e:
             self.columns = None
@@ -72,10 +118,12 @@ class Database:
           filtered_data = {k: v for k, v in data.items() if k in self.df.columns}
           new_row = pd.DataFrame([filtered_data])
           self.df = pd.concat([self.df, new_row], ignore_index=True)
+          self.df = performance_proccess(self.df)
           print(f"✅ Added row for model: {filtered_data.get('Model_name', 'Unknown')}")
         else:
           filtered_data = {k: v for k, v in data.items()if k not in ['preds', 'labels']}
           self.df = pd.DataFrame([filtered_data])
+          self.df = performance_proccess(self.df)
           print(f"Added first")
 
 import numpy as np
@@ -118,17 +166,6 @@ class Evaluate_model:
         "recall": recall
     }
     
-import pandas as pd
-def performance_proccess(df):
-  if "Performance" not in df.columns:
-      return df
-  perf = pd.json_normalize(df['Performance'])
-  perf.columns = [f'{col}' for col in perf.columns]
-  df = pd.concat([df, perf], axis=1)
-  perf_cols = ['accuracy', 'f1_macro', 'f1_weighted', 'precision', 'recall']
-  df[perf_cols] = df[perf_cols] * 100
-  df = df.drop(columns=['Performance','arg','Parameters'])
-  return df
 
 def get_top3_lora(ds):
     df = ds.copy()
@@ -151,3 +188,32 @@ def get_top3_lora(ds):
 def agreegate(df):
   best_per_model = df.loc[df.groupby("Model_name")["accuracy"].idxmax()].reset_index(drop=True)
   return best_per_model
+
+
+def PostProccsess(output, args, categorymap=None):
+    user_name, Main_name = args['username'], args['DataConfig']
+    evaluate = Evaluate_model()
+
+    # --- convert category text to numeric if categorymap is provided ---
+    if categorymap is not None:
+        # Reverse mapping: {"Healthcare": 6, ...}
+        reverse_map = {v: k for k, v in categorymap.items()}
+
+        def convert_to_numeric(x):
+            if isinstance(x, str):
+                return reverse_map.get(x, x)
+            elif isinstance(x, list):
+                return [reverse_map.get(i, i) for i in x]
+            else:
+                return x
+
+        output['preds'] = convert_to_numeric(output['preds'])
+        output['labels'] = convert_to_numeric(output['labels'])
+
+    # --- evaluate performance ---
+    all_preds, all_labels = output['preds'], output['labels']
+    output['Performance'] = evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)
+    # --- main database ---
+    MainDatabase = Database(args['token'], user_name, Main_name)
+    MainDatabase.update_or_add_row(output)
+    MainDatabase.pushdata_to_hgface()
