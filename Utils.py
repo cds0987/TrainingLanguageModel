@@ -25,7 +25,7 @@ def loadLoraModel(model, target_modules, r):
     return model
 
 def loadRandLoraModel(model, target_modules, r):
-    config = RandLoraConfig(r = r,lora_alpha = r,target_modules = target_modules)
+    config = RandLoraConfig(r = r,target_modules  = target_modules )
     model = get_peft_model(model, config)
     model.print_trainable_parameters()
     return model
