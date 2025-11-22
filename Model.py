@@ -44,6 +44,13 @@ class LgModel:
             total_params = sum(p.numel() for p in self.model.parameters())
             trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         return trainable_params, total_params
+    def extract_fields(self,keys: list, missing_value="Not have"):
+     source = self.common_args.to_dict()
+     result = {}
+     for k in keys:
+        v = source.get(k, None)
+        result[k] = v if v is not None else missing_value
+     return result
     def train_test(self,saveargs = None):
         torch.cuda.empty_cache()
         mem_before = torch.cuda.memory_allocated() / 1e6
@@ -63,7 +70,7 @@ class LgModel:
         output['Test_size'] = len(self.test_ds)
         output['preds'] = preds
         output['labels'] = labels
-        output['arg'] = self.common_args.to_dict()
+        output['arg'] = self.extract_fields(self.essential_keys)
         output['lora'] = self.lora
         trainable_parameters, total_parameters = self.count_paramaters()
         output['Parameters'] = total_parameters

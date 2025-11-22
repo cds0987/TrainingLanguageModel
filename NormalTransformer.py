@@ -9,6 +9,40 @@ class SequenceClassification(LgModel):
     super().__init__(model_name,max_seq_length,Model,tokenizer)
     self.lora = target_modules
     self.r = r
+    self.essential_keys = [
+
+    # --- Data / Batching ---
+    "per_device_train_batch_size",
+    "per_device_eval_batch_size",
+    "gradient_accumulation_steps",
+
+    # --- Optimization ---
+    "learning_rate",
+    "weight_decay",
+    "adam_beta1",
+    "adam_beta2",
+    "adam_epsilon",
+    "max_grad_norm",
+    "optim",
+    "optim_args",
+    "adafactor",
+
+    # --- Training schedule ---
+    "num_train_epochs",
+    "max_steps",
+    "lr_scheduler_type",
+    "warmup_steps",
+    "warmup_ratio",
+
+    # --- Precision ---
+    "fp16",
+    "bf16",
+    "fp16_opt_level",
+    "half_precision_backend",
+
+    # --- Misc ---
+    "label_smoothing_factor",
+]
   def preprocess(self,train_ds,test_ds,text_col,label_col):
      self.text_col = text_col
      self.label_col = label_col
