@@ -212,7 +212,9 @@ def PostProccsess(output, args, categorymap=None):
 
     # --- evaluate performance ---
     all_preds, all_labels = output['preds'], output['labels']
-    output['Performance'] = evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)
+    Performance = evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)
+    for k, v in Performance.items():
+      output[k] = v
     # --- main database ---
     MainDatabase = Database(args['token'], user_name, Main_name)
     MainDatabase.update_or_add_row(output)
