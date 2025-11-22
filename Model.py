@@ -50,6 +50,7 @@ class LgModel:
      for k in keys:
         v = source.get(k, None)
         result[k] = v if v is not None else missing_value
+     result['n_gpu'] = self.trainer.args.n_gpu
      return result
     def train_test(self,saveargs = None):
         torch.cuda.empty_cache()
