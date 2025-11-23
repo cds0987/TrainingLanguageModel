@@ -75,7 +75,10 @@ class SequenceClassification(LgModel):
         save_strategy="no",
         save_total_limit=0,
     )
-
+    if arg is not None:
+        for key, value in arg.items():
+            if key in common_args:
+                common_args[key] = value
     if self.adam8bit:
         common_args["optim"] = "adamw_8bit"
     self.common_args =  TrainingArguments(**common_args)
