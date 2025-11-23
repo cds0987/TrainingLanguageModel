@@ -91,7 +91,7 @@ class SequenceClassification(LgModel):
     import torch
     from tqdm import tqdm
     self.max_new_tokens = max_seq_length
-    batch_size = 32
+    batch_size = self.batch_size if hasattr(self, 'batch_size') else 32
     preds = []
     self.model.eval()
     self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
