@@ -57,6 +57,72 @@ def loadRandLoraModel(model, target_modules, r):
     return model
 
 
+from datasets import load_dataset, ClassLabel
+
+def load_and_prepare_dataset(
+    dataset_name: str,
+    label_column: str = "Category_id",
+    cast_labels: bool = True,
+    train_split: float = None,
+    test_split: float = None,
+    stratify: bool = True,
+):
+    """
+    Load a HuggingFace dataset and optionally:
+      • cast labels into ClassLabel
+      • perform stratified or random splits on train/test sets
+
+    Parameters
+    ----------
+    dataset_name : str
+        Name of the dataset on HuggingFace Hub.
+    label_column : str
+        Column name that holds class ids.
+    cast_labels : bool
+        Convert to ClassLabel (required for some models).
+    train_split : float
+        Fraction to keep for train from the original dataset["train"].
+        Example: train_split=0.25 keeps 25% of the train split.
+    test_split : float
+        Same logic for dataset["test"].
+    stratify : bool
+        If True, use stratified split on label_column.
+
+    Returns
+    -------
+    train_ds, test_ds
+    """
+
+    # Load dataset
+    ds = load_dataset(dataset_name)
+
+    # Optionally cast label column to ClassLabel
+    if cast_labels:
+        num_classes = len(set(ds["train"][label_column]))
+        ds = ds.cast_column(
+            label_column,
+            ClassLabel(num_classes=num_classes)
+        )
+
+    # Process train split
+    if train_split is not None:
+        train_ds = ds["train"].train_test_split(
+            test_size=train_split,
+            stratify_by_column=label_column if stratify else None
+        )["train"]
+    else:
+        train_ds = ds["train"]
+
+    # Process test split
+    if test_split is not None:
+        test_ds = ds["test"].train_test_split(
+            test_size=test_split,
+            stratify_by_column=label_column if stratify else None
+        )["train"]
+    else:
+        test_ds = ds["test"]
+
+    return train_ds, test_ds
 
 
 
