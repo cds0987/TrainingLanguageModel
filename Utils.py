@@ -2,7 +2,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from peft import LoraConfig,RandLoraConfig, get_peft_model
 
 def loadRawSequenceClassificationModel(model_name,num_labels,token = ""):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name,token = token,)
     Model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         num_labels=num_labels,
@@ -20,7 +20,7 @@ def loadRawSequenceClassificationModel(model_name,num_labels,token = ""):
 from transformers import BitsAndBytesConfig
 import torch
 def load4bitSequenceClassificationModel(model_name,num_labels,token = ""):
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name,token = token,)
     quantization_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
