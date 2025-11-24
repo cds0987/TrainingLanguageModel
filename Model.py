@@ -53,17 +53,18 @@ class LgModel:
      result['n_gpu'] = self.trainer.args.n_gpu
      return result
     def train_test(self,saveargs = None):
+        
+        from TrainingLanguageModel.Utils import total_current_mem,total_peak_mem
         torch.cuda.empty_cache()
-        mem_before = torch.cuda.memory_allocated() / 1e6
+        torch.cuda.reset_peak_memory_stats()
+        mem_before = total_current_mem()
         start_time = time.time()
         output = {}
         self.trainer.train()
         end_time = time.time()
-        mem_peak = torch.cuda.max_memory_allocated() / 1e6
+        mem_peak = total_peak_mem()
         torch.cuda.empty_cache()
-        mem_after = torch.cuda.memory_allocated() / 1e6
         self.mem_used_train = round(mem_peak - mem_before, 2)
-        mem_inference_est = round(mem_after - mem_before, 2)
         self.training_time = round(end_time - start_time, 2)
         preds,labels = self.test(self.max_seq_length)
         output['Model_name'] = self.model_name
@@ -86,26 +87,5 @@ class LgModel:
 
 
 
-import torch
-def get_lora_modules(model):
-    target_modules = set()
-    ffd_modules = set()
-    attention_modules = set()
-    try:
-      import bitsandbytes as bnb
-      linear_classes = (torch.nn.Linear, bnb.nn.Linear4bit, bnb.nn.Linear8bitLt)
-    except ImportError:
-      linear_classes = (torch.nn.Linear,)
-    for name, module in model.named_modules():
-      if isinstance(module, linear_classes):
-        sub_name = name.split(".")[-1]
-        lname = name.lower()
-            # Add all linear layers to target_modules
-        target_modules.add(sub_name)
-            # Feed-forward layers are all except q, k, v
-        if not any(ch in lname for ch in [ "q", "k", "v"]):
-          ffd_modules.add(sub_name)
-        else:
-          attention_modules.add(sub_name)
-    return sorted(ffd_modules), sorted(attention_modules),target_modules
+
 
