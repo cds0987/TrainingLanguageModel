@@ -43,7 +43,7 @@ def load_sequence_classification_model(
 
 import torch
 
-def get_lora_modules(model):
+def get_lora_modules(model,type = 'att'):
     target_modules = set()
     ffd_modules = set()
     attention_modules = set()
@@ -87,8 +87,13 @@ def get_lora_modules(model):
                 attention_modules.add(sub)
             else:
                 ffd_modules.add(sub)
-
-    return sorted(ffd_modules), sorted(attention_modules), sorted(target_modules)
+    if type == 'all':
+        modules = sorted(target_modules)
+    elif type == 'att':
+        modules = sorted(attention_modules)
+    else:
+        modules = sorted(ffd_modules)
+    return modules
 
 
 from peft import get_peft_model, LoraConfig, RandLoraConfig
