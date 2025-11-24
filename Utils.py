@@ -1,45 +1,46 @@
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from peft import LoraConfig,RandLoraConfig, get_peft_model
-
-def loadRawSequenceClassificationModel(model_name,num_labels,token = ""):
-    tokenizer = AutoTokenizer.from_pretrained(model_name,token = token,)
-    Model = AutoModelForSequenceClassification.from_pretrained(
-        model_name,
-        num_labels=num_labels,
-        ignore_mismatched_sizes=True,token = token
-    )
-    if tokenizer.pad_token is None:
-        if tokenizer.eos_token is not None:
-            tokenizer.pad_token = tokenizer.eos_token
-    else:
-        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        Model.resize_token_embeddings(len(tokenizer))
-        Model.config.pad_token_id = tokenizer.pad_token_id
-    return Model, tokenizer
-
-from transformers import BitsAndBytesConfig
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, BitsAndBytesConfig
 import torch
-def load4bitSequenceClassificationModel(model_name,num_labels,token = ""):
-    tokenizer = AutoTokenizer.from_pretrained(model_name,token = token,)
-    quantization_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_type=torch.float16
-    )
-    Model = AutoModelForSequenceClassification.from_pretrained(
-        model_name,
-        quantization_config=quantization_config,
-        num_labels=num_labels,
-        ignore_mismatched_sizes=True,token = token,
-    )
+
+def load_sequence_classification_model(
+    model_name: str,
+    num_labels: int,
+    token: str = "",
+    load_in_4bit: bool = False,          # ← default: 4-bit is not default
+    compute_dtype: torch.dtype = torch.float16,
+):
+    # --- Tokenizer ---
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
+
+    # Ensure padding token exists
     if tokenizer.pad_token is None:
-        if tokenizer.eos_token is not None:
-            tokenizer.pad_token = tokenizer.eos_token
-    else:
-        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    Model.resize_token_embeddings(len(tokenizer))
-    Model.config.pad_token_id = tokenizer.pad_token_id
-    return Model, tokenizer
+        tokenizer.pad_token = tokenizer.eos_token or "[PAD]"
+        if tokenizer.pad_token == "[PAD]":
+            tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+
+    # --- Optional 4-bit config ---
+    quant_config = None
+    if load_in_4bit:
+        quant_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_type=compute_dtype,
+        )
+
+    # --- Model ---
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name,
+        quantization_config=quant_config,
+        num_labels=num_labels,
+        ignore_mismatched_sizes=True,
+        token=token,
+    )
+
+    # Resize after adding pad token (if needed)
+    model.resize_token_embeddings(len(tokenizer))
+    model.config.pad_token_id = tokenizer.pad_token_id
+
+    return model, tokenizer
+
 
 
 
