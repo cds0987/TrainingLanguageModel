@@ -37,8 +37,8 @@ def load4bitSequenceClassificationModel(model_name,num_labels,token = ""):
             tokenizer.pad_token = tokenizer.eos_token
     else:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-        Model.resize_token_embeddings(len(tokenizer))
-        Model.config.pad_token_id = tokenizer.pad_token_id
+    Model.resize_token_embeddings(len(tokenizer))
+    Model.config.pad_token_id = tokenizer.pad_token_id
     return Model, tokenizer
 
 
