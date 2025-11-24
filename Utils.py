@@ -44,7 +44,7 @@ def load_sequence_classification_model(
 
 
 
-
+from peft import get_peft_model, LoraConfig, RandLoraConfig
 def loadLoraModel(model, target_modules, r):
     config = LoraConfig(r=r,lora_alpha=r,target_modules = target_modules,lora_dropout = 0.05,bias = "none",task_type = "SEQ_CLS")
     model = get_peft_model(model, config)
