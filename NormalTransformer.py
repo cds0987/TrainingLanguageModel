@@ -62,7 +62,7 @@ class SequenceClassification(LgModel):
   def prepare_trainer(self,arg = None, mode="work"):
     common_args = dict(
         auto_find_batch_size = True,
-        gradient_accumulation_steps = arg['gradient_accumulation_steps'] if arg is not None else 4,
+        gradient_accumulation_steps = 4,
         warmup_steps=5,
         num_train_epochs=1,
         learning_rate=5e-5,
