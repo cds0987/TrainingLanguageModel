@@ -67,6 +67,7 @@ class SequenceClassification(LgModel):
         num_train_epochs=1,
         learning_rate=5e-5,
         logging_steps=200,
+        optim = "adamw_8bit",
         weight_decay=0.01,
         lr_scheduler_type="linear",
         seed=3407,
@@ -78,8 +79,6 @@ class SequenceClassification(LgModel):
     if arg is not None:
         for key, value in arg.items():
             common_args[key] = value
-    if self.adam8bit:
-        common_args["optim"] = "adamw_8bit"
     self.common_args =  TrainingArguments(**common_args)
     self.trainer = Trainer(
         args = self.common_args,
