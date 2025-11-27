@@ -129,7 +129,7 @@ class CostSensitiveTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
         if self.class_weights is not None:
-            self.class_weights = self.class_weights.to(logits.device)
+            self.class_weights = self.class_weights.to(device=logits.device, dtype=logits.dtype)
             loss_fct = nn.CrossEntropyLoss(weight=self.class_weights)
         else:
             loss_fct = nn.CrossEntropyLoss()

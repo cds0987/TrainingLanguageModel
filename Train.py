@@ -43,7 +43,7 @@ def training_SequenceClassification(workarg):
 
     elif train_type == 'RandLora':
         model = loadRandLoraModel(model, target_modules, rank)
-        model = model.half()
+        
 
     # Sequence manager (I assume bmodel == model and r == rank)
     sqm = SequenceClassification(

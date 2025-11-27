@@ -114,9 +114,17 @@ def loadLoraModel(model, target_modules, r):
     model.print_trainable_parameters()
     return model
 
+def is_4bit(model):
+    for module in model.modules():
+        if "4bit" in module.__class__.__name__.lower():
+            return True
+    return False
+
 def loadRandLoraModel(model, target_modules, r):
     config = RandLoraConfig(r = r,target_modules  = target_modules )
     model = get_peft_model(model, config)
+    if is_4bit(model):
+        model = model.half()
     model.print_trainable_parameters()
     return model
 
