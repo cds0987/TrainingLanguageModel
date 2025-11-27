@@ -207,7 +207,7 @@ def set_SmoothLabels(model, alpha=0.1):
                          tokenizer = model.tokenizer,
                          )
     
-def apply_custom_loss(model, imbalanceclass_type):
+def apply_custom_loss(model, imbalanceclass_type = 'Notused'):
     if imbalanceclass_type == "FocalLoss":
         set_FocalLoss(model)
     elif imbalanceclass_type == "ClassBalanced":
