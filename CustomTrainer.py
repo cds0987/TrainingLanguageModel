@@ -9,15 +9,21 @@ class FocalLoss(torch.nn.Module):
         self.register_buffer("weight", weight)
 
     def forward(self, logits, targets):
+        # make sure dtype matches (FP16 model → FP16 weights)
+        weight = None
+        if self.weight is not None:
+            weight = self.weight.to(device=logits.device, dtype=logits.dtype)
+
         ce_loss = torch.nn.functional.cross_entropy(
             logits,
             targets,
-            weight=self.weight,
+            weight=weight,     # now correct dtype
             reduction="none"
         )
         p = torch.exp(-ce_loss)
         loss = ((1 - p) ** self.gamma * ce_loss).mean()
         return loss
+
 
 
 class CustomTrainer(Trainer):
@@ -26,53 +32,58 @@ class CustomTrainer(Trainer):
         self.focal_loss = focal_loss
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        labels = inputs.get("labels")
-        outputs = model(**inputs)
-        logits = outputs.get("logits")
-
-        device = logits.device
-        if self.focal_loss is not None:
-            if self.focal_loss.weight is not None:
-                self.focal_loss.weight = self.focal_loss.weight.to(device)
-            loss = self.focal_loss(logits, labels)
-        else:
-            loss = torch.nn.CrossEntropyLoss()(logits, labels)
-
-        return (loss, outputs) if return_outputs else loss
+     labels = inputs["labels"]
+     outputs = model(**inputs)
+     logits = outputs["logits"]
+    # Cast logits to float32 for stable loss computation
+     logits_for_loss = logits.float()
+     if self.focal_loss is not None:
+        loss = self.focal_loss(logits_for_loss, labels)
+     else:
+        loss = torch.nn.CrossEntropyLoss()(logits_for_loss, labels)
+     return (loss, outputs) if return_outputs else loss
 
 
 
 
 class ClassBalancedLoss(nn.Module):
     def __init__(self, samples_per_class, beta=0.9999, gamma=0.0):
-        """
-        samples_per_class: list or tensor of counts per class
-        beta: hyperparameter for class balanced weight
-        gamma: optional focal-style focusing parameter
-        """
         super().__init__()
         self.beta = beta
         self.gamma = gamma
-        samples_per_class = torch.tensor(samples_per_class, dtype=torch.float)
+
+        samples_per_class = torch.tensor(samples_per_class, dtype=torch.float32)
+
+        # Compute CB weights
         cb_weights = (1 - beta) / (1 - beta ** samples_per_class)
         cb_weights = cb_weights / cb_weights.sum() * len(samples_per_class)
+
+        # Store as buffer (FP32)
         self.register_buffer("cb_weights", cb_weights)
+
     def forward(self, logits, targets):
-        weights = self.cb_weights.to(logits.device)
+        # ---- 1. Cast logits to FP32 for stable loss ----
+        logits_fp32 = logits.float()
+
+        # ---- 2. Cast cb_weights to correct device & dtype ----
+        weights = self.cb_weights.to(device=logits.device, dtype=torch.float32)
+
+        # ---- 3. Compute CB CrossEntropy ----
         ce_loss = nn.functional.cross_entropy(
-            logits,
+            logits_fp32,
             targets,
             weight=weights,
             reduction="none"
         )
+
+        # ---- 4. Optional focal modulation ----
         if self.gamma > 0:
             p = torch.exp(-ce_loss)
             loss = ((1 - p) ** self.gamma * ce_loss).mean()
         else:
             loss = ce_loss.mean()
+
         return loss
-
-
 class CustomTrainerCB(CustomTrainer):
     def __init__(self, *args, class_balanced_loss=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,12 +94,16 @@ class CustomTrainerCB(CustomTrainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
 
+        # ---- Cast logits to FP32 (QLoRA safety) ----
+        logits_for_loss = logits.float()
+
         if self.class_balanced_loss is not None:
-            loss = self.class_balanced_loss(logits, labels)
+            loss = self.class_balanced_loss(logits_for_loss, labels)
         else:
-            loss = nn.CrossEntropyLoss()(logits, labels)
+            loss = nn.CrossEntropyLoss()(logits_for_loss, labels)
 
         return (loss, outputs) if return_outputs else loss
+
 
 
 from torch.utils.data import DataLoader, WeightedRandomSampler
@@ -122,21 +137,23 @@ class CostSensitiveTrainer(Trainer):
 
     def __init__(self, *args, class_weights=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Store class weights (a 1D tensor of size num_labels)
         self.class_weights = class_weights
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         labels = inputs.get("labels")
         outputs = model(**inputs)
         logits = outputs.get("logits")
+        logits_for_loss = logits.float()  # always safe
         if self.class_weights is not None:
-            self.class_weights = self.class_weights.to(device=logits.device, dtype=logits.dtype)
-            loss_fct = nn.CrossEntropyLoss(weight=self.class_weights)
+          class_weights = self.class_weights.to(device=logits.device, dtype=torch.float32)
+          loss_fct = nn.CrossEntropyLoss(weight=class_weights)
         else:
-            loss_fct = nn.CrossEntropyLoss()
-
-        loss = loss_fct(logits.view(-1, self.model.config.num_labels),
-                        labels.view(-1))
-
+          loss_fct = nn.CrossEntropyLoss()
+        loss = loss_fct(
+            logits_for_loss.view(-1, self.model.config.num_labels),
+            labels.view(-1)
+    )
         return (loss, outputs) if return_outputs else loss
 
 
