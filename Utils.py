@@ -4,12 +4,16 @@ import torch
 def load_sequence_classification_model(
     model_name: str,
     num_labels: int,
-    token: str = "",
-    load_in_4bit: bool = False,          # ← default: 4-bit is not default
+    token: None = None,
+    load_in_4bit: bool = False,
     compute_dtype: torch.dtype = torch.float16,
 ):
-    # --- Tokenizer ---
-    tokenizer = AutoTokenizer.from_pretrained(model_name, token=token)
+    # --- Tokenizer kwargs ---
+    tok_kwargs = {}
+    if token is not None:
+        tok_kwargs["token"] = token
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name, **tok_kwargs)
 
     # Ensure padding token exists
     if tokenizer.pad_token is None:
@@ -26,20 +30,27 @@ def load_sequence_classification_model(
             bnb_4bit_compute_type=compute_dtype,
         )
 
+    # --- Model kwargs ---
+    model_kwargs = {
+        "quantization_config": quant_config,
+        "num_labels": num_labels,
+        "ignore_mismatched_sizes": True,
+    }
+    if token is not None:
+        model_kwargs["token"] = token
+
     # --- Model ---
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
-        quantization_config=quant_config,
-        num_labels=num_labels,
-        ignore_mismatched_sizes=True,
-        token=token,
+        **model_kwargs,
     )
 
-    # Resize after adding pad token (if needed)
+    # Resize after adding pad token
     model.resize_token_embeddings(len(tokenizer))
     model.config.pad_token_id = tokenizer.pad_token_id
 
     return model, tokenizer
+
 
 import torch
 

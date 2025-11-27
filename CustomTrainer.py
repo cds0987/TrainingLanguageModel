@@ -206,3 +206,15 @@ def set_SmoothLabels(model, alpha=0.1):
                          train_dataset=model.train_ds,
                          tokenizer = model.tokenizer,
                          )
+    
+def apply_custom_loss(model, imbalanceclass_type):
+    if imbalanceclass_type == "FocalLoss":
+        set_FocalLoss(model)
+    elif imbalanceclass_type == "ClassBalanced":
+        set_ClassBalanced(model)
+    elif imbalanceclass_type == "Resample":
+        set_Resample(model)
+    elif imbalanceclass_type == "CostSensitive":
+        set_CostSensitive(model)
+    elif imbalanceclass_type == "SmoothLabels":
+        set_SmoothLabels(model, alpha=0.1)
