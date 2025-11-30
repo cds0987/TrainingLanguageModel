@@ -68,3 +68,58 @@ def training_SequenceClassification(workarg):
     out = sqm.train_test(saveargs=saveargs)
 
     return out
+
+
+
+def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
+             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id'):
+
+    # Unpack for printing
+    model_name = point['Model_name']
+    t = point['t']
+    target_modules = point['lora']
+    r = point['r']
+
+    # -----------------------------
+    # Just print — no other changes
+    # -----------------------------
+    print("\n===== TRAINING CONFIG =====")
+    print(f"Model_name     : {model_name}")
+    print(f"Lora type (t)  : {t}")
+    print(f"Target modules : {target_modules}")
+    print(f"Rank (r)       : {r}")
+    print(f"Upload mode    : {upload}")
+    print("===========================\n")
+
+    # -----------------------------
+    # Your original code (unchanged)
+    # -----------------------------
+    Used_model, tokenizer = load_sequence_classification_model(
+        model_name, num_labels, load_in_4bit=load_in_4bit
+    )
+
+    if upload:
+        Used_model = prepare_model_for_kbit_training(
+            Used_model, use_gradient_checkpointing=True
+        )
+
+    if t == 'lora':
+        Used_model = loadLoraModel(Used_model, target_modules, r)
+    else:
+        Used_model = loadRandLoraModel(Used_model, target_modules, r)
+
+    if upload:
+        Used_model.gradient_checkpointing_enable()
+
+    if t != 'lora':
+        Used_model = Used_model.half()
+
+    model = SequenceClassification(
+        model_name, max_seq, Used_model, tokenizer, target_modules, r
+    )
+
+    model.preprocess(train_ds, test_ds, text_col, labels_col)
+    model.prepare_trainer()
+    out = model.train_test()
+
+    return out
