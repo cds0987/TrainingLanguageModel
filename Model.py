@@ -82,7 +82,6 @@ class LgModel:
         output['Training Time'] = f"{self.training_time}"
         if saveargs is not None:
           self.save_modelHgface(saveargs)
-        self.clear_memory()
         return output
 
 
