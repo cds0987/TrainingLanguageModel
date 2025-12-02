@@ -72,7 +72,8 @@ def training_SequenceClassification(workarg):
 
 from TrainingLanguageModel.Utils import PostProccsess
 def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = True,
-             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used',saveargs = None):
+             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used',alpha = 0.1
+             ,saveargs = None):
 
     # Unpack for printing
     model_name = point['Model_name']
@@ -95,6 +96,8 @@ def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = T
     print(f"Text column    : {text_col}")
     print(f"Labels column  : {labels_col}")
     print(f"Imbalance strat: {imbalance_strategy}")
+    if imbalance_strategy == 'SmoothLabels':
+        print(f"Alpha (SmoothLabels): {alpha}")
     if saveargs is not None:
      print(f"Save args      : {saveargs}")
     print("===========================\n")
