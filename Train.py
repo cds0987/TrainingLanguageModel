@@ -71,7 +71,7 @@ def training_SequenceClassification(workarg):
 
 
 from TrainingLanguageModel.Utils import PostProccsess
-def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
+def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = True,
              num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used',saveargs = None):
 
     # Unpack for printing
