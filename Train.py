@@ -111,13 +111,13 @@ def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
 
     if t == 'lora':
         Used_model = loadLoraModel(Used_model, target_modules, r)
-    else:
+    elif t =='rlora':
         Used_model = loadRandLoraModel(Used_model, target_modules, r)
-
+    else:
+        Used_model = Used_model
     if upload:
         Used_model.gradient_checkpointing_enable()
-
-    if t != 'lora':
+    if t == 'rlora':
         Used_model = Used_model.half()
 
     model = SequenceClassification(
