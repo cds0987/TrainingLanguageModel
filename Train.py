@@ -72,7 +72,7 @@ def training_SequenceClassification(workarg):
 
 
 def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
-             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id'):
+             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used'):
 
     # Unpack for printing
     model_name = point['Model_name']
@@ -89,6 +89,12 @@ def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
     print(f"Target modules : {target_modules}")
     print(f"Rank (r)       : {r}")
     print(f"Upload mode    : {upload}")
+    print(f"Max seq len    : {max_seq}")
+    print(f"4-bit loading  : {load_in_4bit}")
+    print(f"Num labels     : {num_labels}")
+    print(f"Text column    : {text_col}")
+    print(f"Labels column  : {labels_col}")
+    print(f"Imbalance strat: {imbalance_strategy}")
     print("===========================\n")
 
     # -----------------------------
@@ -120,6 +126,7 @@ def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
 
     model.preprocess(train_ds, test_ds, text_col, labels_col)
     model.prepare_trainer()
+    apply_custom_loss(model, imbalance_strategy)
     out = model.train_test()
 
     return out
