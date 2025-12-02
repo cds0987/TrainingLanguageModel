@@ -70,9 +70,9 @@ def training_SequenceClassification(workarg):
     return out
 
 
-
+from TrainingLanguageModel.Utils import PostProccsess
 def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
-             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used'):
+             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used',saveargs = None):
 
     # Unpack for printing
     model_name = point['Model_name']
@@ -95,6 +95,8 @@ def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
     print(f"Text column    : {text_col}")
     print(f"Labels column  : {labels_col}")
     print(f"Imbalance strat: {imbalance_strategy}")
+    if saveargs is not None:
+     print(f"Save args      : {saveargs}")
     print("===========================\n")
 
     # -----------------------------
@@ -128,5 +130,12 @@ def training(train_ds,test_ds,point,upload,max_seq = 48,load_in_4bit = True,
     model.prepare_trainer()
     apply_custom_loss(model, imbalance_strategy)
     out = model.train_test()
-
+    if saveargs is not None:
+     PostProccsess(out,saveargs)
+    else:
+     print("No save arguments provided, skipping post-processing.Shown the model performance")
+     from TrainingLanguageModel.Utils import Evaluate_model
+     evaluate = Evaluate_model()
+     all_preds, all_labels = out['preds'], out['labels']
+     evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)  
     return out
