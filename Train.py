@@ -123,7 +123,8 @@ def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = T
     if upload:
         Used_model.gradient_checkpointing_enable()
     if t == 'rlora':
-        Used_model = Used_model.half()
+        if load_in_4bit:
+         Used_model = Used_model.half()
 
     model = SequenceClassification(
         model_name, max_seq, Used_model, tokenizer, target_modules, r
