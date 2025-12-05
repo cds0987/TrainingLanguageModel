@@ -216,7 +216,7 @@ def set_CostSensitive(model):
                          )
    
 def set_SmoothLabels(model, alpha=0.1):
-    model.common_args.label_smoothing_factor = 0.1
+    model.common_args.label_smoothing_factor = alpha
     model.trainer = Trainer(
                          model=model.model,
                          args=model.common_args,
