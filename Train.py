@@ -132,7 +132,7 @@ def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = T
 
     model.preprocess(train_ds, test_ds, text_col, labels_col)
     model.prepare_trainer()
-    apply_custom_loss(model, imbalance_strategy)
+    apply_custom_loss(model, imbalance_strategy,alpha=alpha)
     out = model.train_test()
     if saveargs is not None:
      PostProccsess(out,saveargs)
