@@ -164,8 +164,6 @@ def set_FocalLoss(model):
   class_weights = class_weights / class_weights.sum()
   class_weights = torch.tensor(class_weights, dtype=torch.float)
   focal_loss = FocalLoss(gamma=2, weight=class_weights)
-
-
   model.trainer = CustomTrainer(
     model = model.model,
     args = model.common_args,
@@ -180,7 +178,7 @@ def set_ClassBalanced(model):
     class_counts = np.bincount(labels)  # number of samples per class
     samples_per_class = class_counts.tolist()
     # Initialize Class-Balanced Loss (optional gamma for focal-style)
-    cb_loss = ClassBalancedLoss(samples_per_class, beta=0.9999, gamma=2.0)
+    cb_loss = ClassBalancedLoss(samples_per_class, beta=0.9999, gamma=0)
     # Use CustomTrainerCB instead of original CustomTrainer
     model.trainer = CustomTrainerCB(
                          model=model.model,
