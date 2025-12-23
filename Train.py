@@ -141,5 +141,7 @@ def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = T
      from TrainingLanguageModel.Utils import Evaluate_model
      evaluate = Evaluate_model()
      all_preds, all_labels = out['preds'], out['labels']
-     evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)  
+     evaluate.Clsevaluate(all_preds, all_labels, plot_cm=False)
+     ma = float(out['Memory Allocation']) / 1024
+     print(f'Memory Allocation {ma} GB')  
     return out
