@@ -7,15 +7,23 @@ from TrainingLanguageModel.Model import LgModel
 
 
 from TrainingLanguageModel.Utils import PostProccsess
-def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = True,trainargs = None,
-             num_labels = 13,text_col = 'meta_description',labels_col = 'Category_id',imbalance_strategy = 'Not Used',alpha = 0.1
-             ,saveargs = None):
+def SeqClassificationtraining(train_ds,test_ds,point):
 
     # Unpack for printing
     model_name = point['Model_name']
     t = point['t']
     target_modules = point['lora']
     r = point['r']
+    upload = point['upload']
+    max_seq = point['max_seq']
+    load_in_4bit = point['load_in_4bit']
+    num_labels = point['num_labels']
+    text_col = point['text_col']
+    labels_col = point['labels_col']
+    imbalance_strategy = point['imbalance_strategy']
+    alpha = point['alpha']
+    saveargs = point['saveargs']
+    trainargs = point['trainargs']
 
     # -----------------------------
     # Just print — no other changes
@@ -67,7 +75,10 @@ def training(train_ds,test_ds,point,upload = False,max_seq = 48,load_in_4bit = T
     )
 
     model.preprocess(train_ds, test_ds, text_col, labels_col)
-    model.prepare_trainer(trainargs)
+    if trainargs is None:
+       model.prepare_trainer()
+    else:
+       model.prepare_trainer(trainargs)
     apply_custom_loss(model, imbalance_strategy,alpha=alpha)
     out = model.train_test()
     if saveargs is not None:
