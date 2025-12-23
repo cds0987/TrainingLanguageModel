@@ -39,7 +39,7 @@ def SeqClassificationtraining(train_ds,test_ds,point):
     print(f"Num labels     : {num_labels}")
     print(f"Text column    : {text_col}")
     print(f"Labels column  : {labels_col}")
-    print(f"Imbalance strat: {imbalance_strategy}")
+    print(f"Imbalance strategy: {imbalance_strategy}")
     if imbalance_strategy == 'SmoothLabels':
         print(f"Alpha (SmoothLabels): {alpha}")
     if saveargs is not None:
