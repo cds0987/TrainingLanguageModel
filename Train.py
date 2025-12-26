@@ -26,6 +26,8 @@ def SeqClassificationtraining(train_ds,test_ds,point):
     imbalance_strategy = point['imbalance_strategy']
     if imbalance_strategy == 'SmoothLabels':
      alpha = point['alpha']
+    else:
+     alpha = 0.1
     saveargs = point['saveargs']
     trainargs = point['trainargs']
 
