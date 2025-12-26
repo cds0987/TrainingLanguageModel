@@ -12,7 +12,10 @@ def SeqClassificationtraining(train_ds,test_ds,point):
     # Unpack for printing
     model_name = point['Model_name']
     t = point['t']
-    target_modules = point['lora']
+    try:
+     target_modules = point['target_modules']
+    except:
+     target_modules = point['lora']
     r = point['r']
     upload = point['upload']
     max_seq = point['max_seq']
